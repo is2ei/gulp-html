@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "gulp": "^4.0.2",
-    "xo": "^0.39.1"
+    "xo": "^0.44.0"
   },
   "files": [
     "index.js"
@@ -41,10 +41,19 @@
   "xo": {
     "space": true,
     "rules": {
+      "arrow-body-style": "off",
       "capitalized-comments": "off",
+      "comma-dangle": [
+        "error",
+        "never"
+      ],
       "object-curly-spacing": [
         "error",
         "always"
+      ],
+      "operator-linebreak": [
+        "error",
+        "after"
       ],
       "quote-props": [
         "error",
@@ -54,6 +63,7 @@
         "error",
         "never"
       ],
+      "unicorn/prefer-module": "off",
       "unicorn/prevent-abbreviations": "off"
     }
   }
