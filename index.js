@@ -7,6 +7,14 @@ const through = require('through2');
 const vnuJar = require('vnu-jar');
 const winston = require('winston');
 
+const defaultOptions = {
+  'errors-only': false,
+  'format': 'gnu',
+  'html': false,
+  'no-stream': false,
+  'verbose': false
+};
+
 const vnuErrorLevels = {
   levels: {
     'success': 0,
@@ -58,44 +66,33 @@ const logger = winston.createLogger({
   ]
 });
 
-module.exports = opts => {
-  let vnuArgs = ['-Xss1024k', `-jar ${vnuJar}`];
+const handleJsonError = (error, messages, path) => {
+  const parsedMessages = JSON.parse(messages).messages;
 
-  const defaultOptions = {
-    'errors-only': false,
-    'format': 'gnu',
-    'html': false,
-    'no-stream': false,
-    'verbose': false
-  };
+  if (error === null && parsedMessages.length === 0) {
+    return logger.log('success', 'Document is valid: ', { path });
+  }
 
-  const options = { ...defaultOptions, ...opts };
+  parsedMessages.map(message => logger.log(message.type, message.message, message));
+};
+
+module.exports = options => {
+  const vnuArgs = ['-Xss1024k', '-jar', `"${vnuJar}"`];
+  const mergedOptions = { ...defaultOptions, ...options };
 
   // Set options
-  for (const key of Object.keys(options)) {
-    const value = options[key];
+  for (const key of Object.keys(mergedOptions)) {
+    const value = mergedOptions[key];
     if (key === 'format' && value !== 'gnu') {
-      vnuArgs = [...vnuArgs, `--format ${value}`];
+      vnuArgs.push('--format', value);
     }
 
     if (value === true) {
-      vnuArgs = [...vnuArgs, `--${key}`];
+      vnuArgs.push(`--${key}`);
     }
   }
 
-  function handleError(error, messages, path) {
-    const parsedMessages = JSON.parse(messages).messages;
-
-    if (error === null && parsedMessages.length === 0) {
-      return logger.log('success', 'Document is valid: ', { path });
-    }
-
-    parsedMessages.map(message => {
-      return logger.log(message.type, message.message, message);
-    });
-  }
-
-  const stream = through.obj((file, enc, cb) => {
+  return through.obj((file, enc, cb) => {
     if (file.isNull()) {
       return cb(null, file);
     }
@@ -104,20 +101,16 @@ module.exports = opts => {
       return cb(new PluginError('gulp-html', 'Streaming not supported'));
     }
 
-    vnuArgs = [...vnuArgs, file.history];
+    vnuArgs.push(file.history);
 
-    execFile('java', vnuArgs, { shell: true }, (err, stdout, stderr) => {
-      if (options.format === 'json') {
-        return cb(handleError(err, stderr, file.history[0]));
+    execFile('java', vnuArgs, { shell: true }, (error, stdout, stderr) => {
+      if (mergedOptions.format === 'json') {
+        return cb(handleJsonError(error, stderr, file.history[0]));
       }
 
-      if (err === null) {
-        return cb(null, file);
-      }
-
-      return cb(new PluginError('gulp-html', stderr));
+      return error === null ?
+        cb(null, file) :
+        cb(new PluginError('gulp-html', stderr));
     });
   });
-
-  return stream;
 };
