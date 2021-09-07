@@ -66,7 +66,7 @@ const handleJsonError = (error, messages, path) => {
     return logger.log('success', 'Document is valid: ', { path });
   }
 
-  parsedMessages.map(message => logger.log(message.type, message.message, message));
+  return parsedMessages.map(message => logger.log(message.type, message.message, message));
 };
 
 module.exports = options => {
