@@ -14,6 +14,7 @@ const defaultOptions = {
   'no-stream': false,
   'verbose': false
 };
+const defaultFormats = new Set(['gnu', 'xml', 'json', 'text']);
 
 const vnuErrorLevels = {
   'success': 0,
@@ -75,7 +76,7 @@ module.exports = options => {
   // Set options
   for (const key of Object.keys(mergedOptions)) {
     const value = mergedOptions[key];
-    if (key === 'format' && value !== 'gnu') {
+    if (key === 'format' && defaultFormats.has(value)) {
       vnuArgs.push('--format', value);
     }
 
