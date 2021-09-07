@@ -94,7 +94,7 @@ module.exports = options => {
       return cb(new PluginError('gulp-html', 'Streaming not supported'));
     }
 
-    vnuArgs.push(file.history);
+    vnuArgs.push(file.history.map(f => `"${f}"`));
 
     execFile('java', vnuArgs, { shell: true }, (error, stdout, stderr) => {
       if (mergedOptions.format === 'json') {
